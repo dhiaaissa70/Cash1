@@ -6,23 +6,52 @@ import UserDetails from './Auth/UserDetails';
 import DashboardPage from './Home/DashboardPage';
 import TransferHistory from './Transaction/TransferHistory';
 import RegisterForm from './Auth/Registre';
+import { AuthProvider, useAuth } from './providers/AuthContext';
+
+// Composant pour les routes protégées (vérifie uniquement l'authentification)
+function ProtectedRoute({ element, redirectPath = "/login" }) {
+    const { user } = useAuth();
+    const isAuthenticated = !!user;
+
+    return isAuthenticated ? element : <Navigate to={redirectPath} replace />;
+}
 
 function AppRoutes() {
     return (
-        <Router>
-            <Header />
-            <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/login" element={<Login />} />
-                <Route path="/trunsuctionhistory" element={<TransferHistory />} />
+        <AuthProvider>
+            <Router>
+                <Header />
+                <Routes>
+                    {/* Route publique pour la page de connexion */}
+                    <Route path="/login" element={<Login />} />
 
-                <Route path="/users" element={<Users />} />
-                <Route path="/regitre" element={<RegisterForm />} />
-
-                {/* Fix: Use dynamic userId in the path */}
-                <Route path="/usersDetails/:userId" element={<UserDetails />} />
-            </Routes>
-        </Router>
+                    {/* Routes protégées qui nécessitent uniquement une authentification */}
+                    <Route 
+                        path="/" 
+                        element={<ProtectedRoute element={<DashboardPage />} />} 
+                    />
+                    <Route 
+                        path="/trunsuctionhistory" 
+                        element={<ProtectedRoute element={<TransferHistory />} />} 
+                    />
+                    <Route 
+                        path="/users" 
+                        element={<ProtectedRoute element={<Users />} />} 
+                    />
+                    <Route 
+                        path="/regitre" 
+                        element={<ProtectedRoute element={<RegisterForm />} />} 
+                    />
+                    <Route 
+                        path="/usersDetails/:userId" 
+                        element={<ProtectedRoute element={<UserDetails />} />} 
+                    />
+                    
+                    {/* Fallback route pour toute autre route non définie */}
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Router>
+        </AuthProvider>
     );
 }
 

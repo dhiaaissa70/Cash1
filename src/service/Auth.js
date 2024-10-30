@@ -3,17 +3,15 @@ import axios from "axios";
 class Auth {
     constructor(baseURL) {
         this.api = axios.create({
-            baseURL: baseURL || "https://backendtache1-production.up.railway.app/",  // Ensure this is your correct backend URL
+            baseURL: baseURL || "https://backendtache1-production.up.railway.app/",
         });
     }
-
-    // Method to register a new user
     async registerUser(profile) {
         try {
             const response = await this.api.post("/auth/register", {
                 username: profile.username ?? "",
                 password: profile.password ?? "",
-                role: profile.role ?? "user", 
+                role: profile.role ?? "user",
                 id: profile.id
             });
 
@@ -30,7 +28,7 @@ class Auth {
                     return {
                         success: false,
                         status: 409,
-                        message: "Utilisateur déjà enregistré",  // Custom error for user already exists
+                        message: "Utilisateur déjà enregistré",
                     };
                 }
                 return {
@@ -51,13 +49,11 @@ class Auth {
     // Method to login a user
     async loginUser(credentials) {
         try {
-            // Sending login request to the backend
             const response = await this.api.post("/auth/login", {
                 username: credentials.username ?? "",
                 password: credentials.password ?? ""
             });
 
-            // Check if response is successful and return the data
             return {
                 success: true,
                 status: response.status,
@@ -68,13 +64,12 @@ class Auth {
         } catch (error) {
             console.error("Erreur lors de la connexion de l'utilisateur :", error);
 
-            // Check if the error is from the server (response exists)
             if (error.response) {
                 if (error.response.status === 401) {
                     return {
                         success: false,
                         status: 401,
-                        message: "Mot de passe incorrect",  // Custom error for wrong credentials
+                        message: "Mot de passe incorrect",
                     };
                 }
                 return {
@@ -199,41 +194,7 @@ class Auth {
         }
     }
 
-    // 2. New Method to update user by ID
-    async updateUserById(userId, updatedDetails) {
-        try {
-            const token = localStorage.getItem('token'); // Get the JWT token from localStorage
-            const response = await this.api.put(`/auth/update_user/${userId}`, updatedDetails, {
-                headers: {
-                    Authorization: `Bearer ${token}`, // Include token in Authorization header
-                }
-            });
-
-            return {
-                success: true,
-                status: response.status,
-                message: response.data.message,
-                user: response.data.user,
-            };
-        } catch (error) {
-            console.error("Erreur lors de la mise à jour de l'utilisateur :", error);
-
-            if (error.response) {
-                return {
-                    success: false,
-                    status: error.response.status,
-                    message: error.response.data.message || "Une erreur est survenue lors de la mise à jour de l'utilisateur",
-                };
-            } else {
-                return {
-                    success: false,
-                    status: 500,
-                    message: "Network error or server is unreachable.",
-                };
-            }
-        }
-    }
-
+   
     async getUserById(userId) {
         try {
             const token = localStorage.getItem('token'); // Get the JWT token from localStorage
@@ -371,6 +332,47 @@ class Auth {
             }
         }
     }
+    // Method to update user by username
+    async updateUser(username, updatedDetails) {
+        try {
+            const token = localStorage.getItem('token');
+            const response = await this.api.put("/auth/update",
+                {
+                    username: username ?? "",
+                    ...updatedDetails
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                    }
+                }
+            );
+
+            return {
+                success: true,
+                status: response.status,
+                message: response.data.message,
+                user: response.data.user, // The updated user data returned from the backend
+            };
+        } catch (error) {
+            console.error("Erreur lors de la mise à jour de l'utilisateur :", error);
+
+            if (error.response) {
+                return {
+                    success: false,
+                    status: error.response.status,
+                    message: error.response.data.message || "Une erreur est survenue lors de la mise à jour de l'utilisateur",
+                };
+            } else {
+                return {
+                    success: false,
+                    status: 500,
+                    message: "Network error or server is unreachable.",
+                };
+            }
+        }
+    }
+
 }
 
 export default Auth;

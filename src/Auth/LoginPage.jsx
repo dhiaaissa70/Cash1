@@ -9,7 +9,7 @@ const Login = ({ onLoginSuccess }) => {
     const [errorMessage, setErrorMessage] = useState("");
     const [isLoading, setIsLoading] = useState(false);
 
-    const {  updateUser } = useAuth(); 
+    const { updateUser } = useAuth(); 
     const navigate = useNavigate();
     const authApi = new Auth();
 
@@ -19,7 +19,6 @@ const Login = ({ onLoginSuccess }) => {
 
         try {
             const response = await authApi.loginUser({ username, password });
-
             if (response.success) {
                 updateUser({
                     token: response.token,
@@ -34,7 +33,7 @@ const Login = ({ onLoginSuccess }) => {
                 if (response.user.role === "User") {
                     navigate("/user");
                 } else {
-                    navigate("/transferaction");
+                    navigate("/");
                 }
             } else {
                 setErrorMessage(response.message || "Failed to login. Please try again.");
@@ -50,7 +49,7 @@ const Login = ({ onLoginSuccess }) => {
     };
 
     return (
-        <div className="w-full max-w-md mx-auto p-6 sm:p-8"> 
+        <div className="w-full max-w-md mx-auto p-6 sm:p-8"> {/* Added responsive padding */}
             <h2 className="text-xl sm:text-2xl font-bold mb-4 text-center">Login</h2>
             <form onSubmit={handleSubmit}>
                 <div className="mb-4">

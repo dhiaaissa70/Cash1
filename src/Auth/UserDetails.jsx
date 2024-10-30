@@ -1,32 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // To get user ID from URL
-import Auth from '../service/Auth'; // Assuming you have your Auth service setup
-import { motion } from 'framer-motion'; // For some animations
-import UserTree from './UsersTree'; // Import the UserTree component
+import { useParams, useNavigate } from 'react-router-dom'; // Pour obtenir l'ID de l'utilisateur depuis l'URL
+import Auth from '../service/Auth'; // Service Auth
+import { motion } from 'framer-motion'; // Pour les animations
+import UserTree from './UsersTree'; // Composant UserTree
 
 const UserDetails = () => {
-  const { userId } = useParams(); // Get the userId from the URL params
+  const { userId } = useParams(); // Obtenir l'ID de l'utilisateur depuis les paramètres de l'URL
   const navigate = useNavigate();
-  const [user, setUser] = useState(null); // For storing the user data
-  const [amount, setAmount] = useState('');
-  const [newUsername, setNewUsername] = useState('');
-  const [role, setRole] = useState('');
-  const [userTreeData, setUserTreeData] = useState([]); // State for user tree data
+  const [user, setUser] = useState(null); // Pour stocker les données de l'utilisateur
+  const [amount, setAmount] = useState(''); // Pour stocker le montant
+  const [newUsername, setNewUsername] = useState(''); // Pour le nouveau nom d'utilisateur
+  const [role, setRole] = useState(''); // Pour le rôle de l'utilisateur
+  const [userTreeData, setUserTreeData] = useState([]); // État pour les données de l'arbre des utilisateurs
   const authService = new Auth();
 
-  // Fetch user by ID when component mounts
+  // Récupérer l'utilisateur par ID lors du montage du composant
   useEffect(() => {
     const fetchUser = async () => {
       const result = await authService.getUserById(userId);
       if (result.success) {
         setUser(result.user);
-        setNewUsername(result.user.username); // Set default value for update fields
+        setNewUsername(result.user.username); // Définir la valeur par défaut pour les champs de mise à jour
         setRole(result.user.role);
 
-        // Fetch the users created by this user for the user tree
+        // Récupérer les utilisateurs créés par cet utilisateur pour l'arbre des utilisateurs
         const treeResult = await authService.getUsersByCreaterId(userId);
         if (treeResult.success) {
-          setUserTreeData(treeResult.users); // Set the user tree data
+          setUserTreeData(treeResult.users); // Définir les données de l'arbre des utilisateurs
         } else {
           console.error(treeResult.message);
         }
@@ -36,45 +36,46 @@ const UserDetails = () => {
     };
 
     fetchUser();
-  }, [userId, authService]);
+  }, [userId, authService]); // Utilisez userId et authService comme dépendances
 
-  // Function to update user details
+  // Fonction pour mettre à jour les détails de l'utilisateur
   const handleUpdate = async () => {
     const updatedDetails = {
       username: newUsername,
-      role: role
+      role: role,
     };
-    const result = await authService.updateUserById(userId, updatedDetails);
+
+    const result = await authService.updateUser(userId, updatedDetails); // Passer les détails mis à jour
     if (result.success) {
       alert('Utilisateur mis à jour avec succès');
-      setUser(result.user); // Update the user in state after successful update
+      setUser(result.user); // Mettre à jour l'utilisateur dans l'état après une mise à jour réussie
     } else {
       console.error(result.message);
     }
   };
 
-  // Function to delete the user
+  // Fonction pour supprimer l'utilisateur
   const handleDelete = async () => {
     const confirmed = window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur?');
     if (confirmed) {
       const result = await authService.deleteUserById(userId);
       if (result.success) {
         alert('Utilisateur supprimé avec succès');
-        navigate('/users'); // Redirect back to users list
+        navigate('/users'); // Rediriger vers la liste des utilisateurs
       } else {
         console.error(result.message);
       }
     }
   };
 
-  // If user data is not yet loaded
+  // Si les données de l'utilisateur ne sont pas encore chargées
   if (!user) {
     return <div>Chargement des données de l'utilisateur...</div>;
   }
 
   return (
-    <div className="flex h-screen"> {/* Full height screen layout */}
-      {/* User Tree Section */}
+    <div className="flex h-screen"> {/* Disposition pleine hauteur */}
+      {/* Section de l'arbre des utilisateurs */}
       <div className="w-64 bg-gray-50 p-6 h-full shadow-lg">
         <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
         {userTreeData.length > 0 ? (
@@ -84,7 +85,7 @@ const UserDetails = () => {
         )}
       </div>
 
-      {/* User Details Section */}
+      {/* Section des détails de l'utilisateur */}
       <motion.div className="flex-1 p-6 bg-gray-50 overflow-y-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-3xl font-bold">{user.username}</h2>
@@ -107,8 +108,9 @@ const UserDetails = () => {
           <div className="mb-4">
             <label className="font-bold">Nom d'utilisateur:</label>
             <input
-              value={newUsername}
-              onChange={(e) => setNewUsername(e.target.value)}
+              type="text" // S'assurer que le type est correct
+              value={newUsername} // Liaison à l'état
+              onChange={(e) => setNewUsername(e.target.value)} // Met à jour la valeur du nom d'utilisateur
               className="ml-2 border p-2 rounded-md w-full"
               placeholder="Nom d'utilisateur"
             />
@@ -117,8 +119,9 @@ const UserDetails = () => {
           <div className="mb-4">
             <label className="font-bold">Rôle:</label>
             <input
-              value={role}
-              onChange={(e) => setRole(e.target.value)}
+              type="text" // S'assurer que le type est correct
+              value={role} // Liaison à l'état
+              onChange={(e) => setRole(e.target.value)} // Met à jour la valeur du rôle
               className="ml-2 border p-2 rounded-md w-full"
               placeholder="Rôle"
             />
@@ -129,31 +132,32 @@ const UserDetails = () => {
             <span className="ml-2">{user.balance} TND</span>
           </div>
 
-          {/* Amount Input */}
+          {/* Champ de montant */}
           <div className="mb-4">
             <label className="font-bold">Montant:</label>
             <input
-              value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              type="text" // S'assurer que le type est correct
+              value={amount} // Liaison à l'état
+              onChange={(e) => setAmount(e.target.value)} // Mettre à jour la valeur du montant
               className="w-full border p-2 rounded-md"
               placeholder="Montant"
             />
           </div>
 
-          {/* Quick Amount Buttons */}
+          {/* Boutons de montant rapide */}
           <div className="flex mb-4 space-x-2">
             {[500, 1000, 5000, 25000].map((value) => (
               <button
                 key={value}
                 className="bg-gray-200 p-2 rounded-lg"
-                onClick={() => setAmount(value)}
+                onClick={() => setAmount(value)} // Définir le montant au clic
               >
                 {value.toLocaleString()} TND
               </button>
             ))}
           </div>
 
-          {/* Deposit and Withdraw Buttons */}
+          {/* Boutons de dépôt et retrait */}
           <div className="flex space-x-4">
             <button className="flex-1 bg-green-500 text-white p-2 rounded-lg">Dépôt</button>
             <button className="flex-1 bg-red-500 text-white p-2 rounded-lg">Retrait</button>
