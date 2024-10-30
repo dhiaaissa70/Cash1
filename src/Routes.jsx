@@ -1,14 +1,17 @@
 import { BrowserRouter as Router, Route, Routes, Navigate } from 'react-router-dom';
 import Login from './auth/LoginPage';
-import UserDetails from './Auth/UsersDetails';
+import Users from './Auth/Users';
 import Header from "./pages/Header"
+import UserDetails from './Auth/UserDetails';
 function AppRoutes() {
     return (
         <Router>
             <Header/>
             <Routes>
                 <Route path="/login" element={< Login/>} />
-                <Route path="/userdetails" element={< UserDetails/>} />
+                <Route path="/users" element={< Users/>} />
+                <Route path="/usersDetails" element={< UserDetails/>} />
+
             </Routes>
         </Router>
     );

@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Auth from '../service/Auth';
+import { useNavigate } from "react-router-dom";
 
-const UserDetails = () => {
+const Users = () => {
     const authService = new Auth();
     const [users, setUsers] = useState([]);
     const [sortOrder, setSortOrder] = useState({ key: '', order: 'asc' });
@@ -13,6 +14,7 @@ const UserDetails = () => {
     const [tooltipInfo, setTooltipInfo] = useState(null);
     const [showTooltip, setShowTooltip] = useState(false);
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+    const navigate = useNavigate();
 
     const fetchUsers = async () => {
         try {
@@ -99,6 +101,7 @@ const UserDetails = () => {
     };
 
     const handleEdit = (userId) => {
+        navigate(`/usersDetails/${userId}`);
         console.log(`Modifier l'utilisateur avec l'ID : ${userId}`);
     };
 
@@ -189,7 +192,7 @@ const UserDetails = () => {
                                     </span>
                                 </td>
                                 <td className="py-3 px-4">{user.balance} TND</td>
-                                <td className="py-3 px-4">{user.currency}</td>
+                                <td className="py-3 px-4">TND</td>
                                 <td className="py-3 px-4">
                                 <img
                                         src="/public/images/user_update.png"
@@ -211,6 +214,7 @@ const UserDetails = () => {
                                         <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="mr-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
                                             Précédent
                                         </button>
+                                        <span>{currentPage}/{totalPages}  </span>
                                         <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-4 py-2 bg-blue-500 text-white rounded-lg">
                                             Suivant
                                         </button>
@@ -237,4 +241,4 @@ const UserDetails = () => {
     );
 };
 
-export default UserDetails;
+export default Users;
