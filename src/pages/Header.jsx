@@ -13,7 +13,7 @@ const Header = () => {
     };
 
     return (
-        <div className="flex flex-col sm:flex-row items-center justify-between bg-gray-900 text-white p-4 shadow-lg">
+        <div className=" bg-[#242424] flex flex-col sm:flex-row items-center justify-between bg-gray-900 text-white p-4 shadow-lg">
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
                 <div className="flex items-center space-x-2 border-r border-gray-600 pr-4">

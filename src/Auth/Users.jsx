@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import Auth from '../service/Auth';
 import { useNavigate } from "react-router-dom";
+import { motion } from 'framer-motion';
 
 const Users = () => {
     const authService = new Auth();
@@ -109,15 +110,18 @@ const Users = () => {
         return `#${userId.slice(-10)}`;
     };
 
+    // Updated handleMouseEnter to handle null values
     const handleMouseEnter = (creator, event) => {
-        setTooltipInfo({
-            username: creator.username,
-            role: creator.role,
-            balance: creator.balance,
-            userdate: creator.userdate,
-        });
-        setTooltipPosition({ x: event.clientX, y: event.clientY });
-        setShowTooltip(true);
+        if (creator) {  // Ensure creator is not null or undefined
+            setTooltipInfo({
+                username: creator.username || 'N/A',
+                role: creator.role || 'N/A',
+                balance: creator.balance || 0,
+                userdate: creator.userdate || 'N/A',
+            });
+            setTooltipPosition({ x: event.clientX, y: event.clientY });
+            setShowTooltip(true);
+        }
     };
 
     const handleMouseLeave = () => {
@@ -130,6 +134,8 @@ const Users = () => {
     return (
         <div className="container mx-auto p-6 bg-gray-50 rounded-xl shadow-lg">
             <h1 className="text-4xl font-extrabold text-gray-800 mb-6">Tableau des utilisateurs</h1>
+            
+            {/* Users per page select */}
             <div className="flex justify-between items-center mb-6">
                 <label htmlFor="usersPerPage" className="text-lg font-medium">Utilisateurs par page :</label>
                 <select
@@ -146,7 +152,13 @@ const Users = () => {
                 </select>
             </div>
 
-            <div className="overflow-x-auto rounded-lg shadow-sm">
+            {/* Table */}
+            <motion.div
+                className="overflow-x-auto rounded-lg shadow-sm"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ duration: 0.5 }}
+            >
                 <table className="min-w-full bg-white rounded-lg overflow-hidden shadow-md">
                     <thead className="bg-gradient-to-r from-indigo-500 to-indigo-700 text-white">
                         <tr>
@@ -177,31 +189,35 @@ const Users = () => {
                     </thead>
                     <tbody>
                         {currentUsers.map((user, index) => (
-                            <tr key={user._id} className={`text-gray-700 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} hover:bg-gray-200 transition-colors`}>
+                            <motion.tr
+                                key={user._id}
+                                className={`text-gray-700 ${index % 2 === 0 ? 'bg-gray-100' : 'bg-white'} hover:bg-gray-200 transition-colors`}
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: index * 0.1 }}
+                                onMouseEnter={(event) => handleMouseEnter(user.creatorInfo, event)}
+                                onMouseLeave={handleMouseLeave}
+                            >
                                 <td className="py-3 px-4">{formatUserId(user._id)}</td>
                                 <td className="py-3 px-4">{user.username}</td>
                                 <td className={`py-3 px-4 rounded-lg font-semibold ${getRoleColorClass(user.role)}`}>{user.role}</td>
                                 <td className="py-3 px-4">{formatDate(user.userdate)}</td>
                                 <td className="py-3 px-4 relative">
-                                    <span
-                                        className="cursor-pointer hover:underline"
-                                        onMouseEnter={(event) => handleMouseEnter(user.creatorInfo, event)}
-                                        onMouseLeave={handleMouseLeave}
-                                    >
+                                    <span className="cursor-pointer hover:underline">
                                         {user.creatorInfo ? user.creatorInfo.username : 'N/A'}
                                     </span>
                                 </td>
                                 <td className="py-3 px-4">{user.balance} TND</td>
                                 <td className="py-3 px-4">TND</td>
                                 <td className="py-3 px-4">
-                                <img
+                                    <img
                                         src="/public/images/user_update.png"
                                         alt="Edit"
                                         className="w-6 h-6 cursor-pointer"
                                         onClick={() => handleEdit(user._id)}
                                     />
                                 </td>
-                            </tr>
+                            </motion.tr>
                         ))}
                     </tbody>
                     <tfoot>
@@ -211,31 +227,47 @@ const Users = () => {
                                     <span className="font-bold">Total des utilisateurs : {userCount}</span>
                                     <span className="font-bold">Solde total : {totalBalance} TND</span>
                                     <div>
-                                        <button onClick={() => handlePageChange(currentPage - 1)} disabled={currentPage === 1} className="mr-2 px-4 py-2 bg-blue-500 text-white rounded-lg">
+                                        <motion.button
+                                            onClick={() => handlePageChange(currentPage - 1)}
+                                            disabled={currentPage === 1}
+                                            className="mr-2 px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                                            whileHover={{ scale: currentPage > 1 ? 1.05 : 1 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
                                             Précédent
-                                        </button>
-                                        <span>{currentPage}/{totalPages}  </span>
-                                        <button onClick={() => handlePageChange(currentPage + 1)} disabled={currentPage === totalPages} className="px-4 py-2 bg-blue-500 text-white rounded-lg">
+                                        </motion.button>
+                                        <span>{currentPage}/{totalPages}</span>
+                                        <motion.button
+                                            onClick={() => handlePageChange(currentPage + 1)}
+                                            disabled={currentPage === totalPages}
+                                            className="px-4 py-2 bg-blue-500 text-white rounded-lg disabled:opacity-50"
+                                            whileHover={{ scale: currentPage < totalPages ? 1.05 : 1 }}
+                                            whileTap={{ scale: 0.95 }}
+                                        >
                                             Suivant
-                                        </button>
+                                        </motion.button>
                                     </div>
                                 </div>
                             </td>
                         </tr>
                     </tfoot>
                 </table>
-            </div>
-        
+            </motion.div>
+
+            {/* Tooltip */}
             {showTooltip && tooltipInfo && (
-                <div
+                <motion.div
                     className="absolute z-10 bg-white border border-gray-300 p-4 rounded-lg shadow-lg"
                     style={{ left: tooltipPosition.x, top: tooltipPosition.y }}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                 >
                     <p><strong>Nom d'utilisateur :</strong> {tooltipInfo.username}</p>
                     <p><strong>Rôle :</strong> {tooltipInfo.role}</p>
                     <p><strong>Solde :</strong> {tooltipInfo.balance} TND</p>
                     <p><strong>Date de création :</strong> {formatDate(tooltipInfo.userdate)}</p>
-                </div>
+                </motion.div>
             )}
         </div>
     );
