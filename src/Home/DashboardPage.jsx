@@ -38,9 +38,9 @@ const DashboardPage = () => {
 
 // Menu Items
 const menuItems = [
-  { label: 'Nouvel Utilisateur', icon: <FaUserPlus size={24} />, route: '/new-user', hasArrow: false },
+  { label: 'Nouvel Utilisateur', icon: <FaUserPlus size={24} />, route: '/regitre', hasArrow: false },
   { label: 'Utilisateurs', icon: <FaUsers size={24} />, route: '/users', hasArrow: false },
-  { label: 'Transactions', icon: <FaReceipt size={24} />, route: '/transactions', hasArrow: false },
+  { label: 'Transactions', icon: <FaReceipt size={24} />, route: '/trunsuctionhistory', hasArrow: false },
   { label: 'Rapport GGR', icon: <FaChartBar size={24} />, route: '/ggr-report', hasArrow: false },
   { label: 'Paramètres des Jeux', icon: <FaGlobe size={24} />, route: '/game-settings', hasArrow: true },
   { label: 'CMS', icon: <FaCog size={24} />, route: '/cms', hasArrow: true },
