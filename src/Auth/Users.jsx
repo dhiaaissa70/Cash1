@@ -211,7 +211,7 @@ const Users = () => {
                                 <td className="py-3 px-4">TND</td>
                                 <td className="py-3 px-4">
                                     <img
-                                        src="/public/images/user_update.png"
+                                        src="/images/user_update.png"
                                         alt="Edit"
                                         className="w-6 h-6 cursor-pointer"
                                         onClick={() => handleEdit(user._id)}
