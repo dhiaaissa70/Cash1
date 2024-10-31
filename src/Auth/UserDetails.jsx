@@ -9,21 +9,40 @@ import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
 import UserTreeItem from './UsersTree';
 
 const UserDetails = () => {
-  const { userId } = useParams(); // Get the userId from URL params (this will be the receiver's ID)
+  const { userId } = useParams();
   const navigate = useNavigate();
-  const [user, setUser] = useState(null); // Store user data
-  const [amount, setAmount] = useState(''); // Store amount
-  const [newUsername, setNewUsername] = useState(''); // New username state
-  const [role, setRole] = useState(''); // Role state
-  const [userTreeData, setUserTreeData] = useState([]); // User tree data state
-  const [selectedUser, setSelectedUser] = useState(null); // State for selected user
-  const { user: authUser } = useAuth(); // Retrieve logged-in user and token from useAuth
+  const [user, setUser] = useState(null);
+  const [amount, setAmount] = useState('');
+  const [newUsername, setNewUsername] = useState('');
+  const [role, setRole] = useState('');
+  const [userTreeData, setUserTreeData] = useState([]);
+  const [selectedUser, setSelectedUser] = useState(null); // Updated user selection
+  const { user: authUser } = useAuth();
   const authService = new Auth();
-  const transferService = new TransferService(); // Initialize TransferService
-  const [loading, setLoading] = useState(false); // Loading state to disable buttons during actions
-  const [transactionMessage, setTransactionMessage] = useState(''); // For displaying transaction success or error messages
+  const transferService = new TransferService();
+  const [loading, setLoading] = useState(false);
+  const [transactionMessage, setTransactionMessage] = useState('');
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"];
 
-  const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"]; // Predefined roles
+  const [menuOpenId, setMenuOpenId] = useState(null);
+  const openUpdateModal = () => {
+    if (selectedUser) {
+      setNewUsername(selectedUser.username); // Ensure modal shows the selected user's data
+      setRole(selectedUser.role);
+    }
+    setShowUpdateModal(true);
+  };
+  const openTransferModal = () => setShowTransferModal(true);
+  const openDeleteModal = () => setShowDeleteModal(true);
+
+  const closeModals = () => {
+    setShowUpdateModal(false);
+    setShowTransferModal(false);
+    setShowDeleteModal(false);
+  };
 
   // Fetch user data on component mount
   useEffect(() => {
@@ -34,18 +53,14 @@ const UserDetails = () => {
 
         if (result.success) {
           setUser(result.user);
-          setSelectedUser(result.user); // Set the top-level user as selected by default
+          setSelectedUser(result.user); // Initialize selectedUser with the top-level user
           setNewUsername(result.user.username);
           setRole(result.user.role);
 
           const treeResult = await authService.getUsersByCreaterId(userId);
           if (treeResult.success) {
-            setUserTreeData(treeResult.user); // Set the root user with children
-          } else {
-            console.error("Error fetching user tree:", treeResult.message);
+            setUserTreeData(treeResult.user);
           }
-        } else {
-          console.error("Error fetching user:", result.message);
         }
       } catch (error) {
         console.error("Error fetching user:", error);
@@ -58,24 +73,27 @@ const UserDetails = () => {
   }, [userId]);
 
   const handleUserSelect = (user) => {
-    setSelectedUser(user);
+    setSelectedUser(user); // Set selected user based on tree click
+    setNewUsername(user.username);
+    setRole(user.role);
   };
 
-
-  // Function to update user details
   const handleUpdate = async () => {
+    if (!selectedUser) return;
+
     const updatedDetails = {
-      username: newUsername, // Updated username
-      role: role,            // Updated role
+      username: newUsername,
+      role: role,
     };
 
     setLoading(true);
     try {
-      const result = await authService.updateUser(userId, updatedDetails);
+      const result = await authService.updateUser(selectedUser._id, updatedDetails);
 
       if (result.success) {
         toast.success('Utilisateur mis à jour avec succès');
-        setUser(result.user); // Update the state with the new user data
+        setUser(result.user); // Update the main user data
+        setSelectedUser(result.user); // Update the selected user
         setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
       } else {
         toast.error('Erreur lors de la mise à jour : ' + result.message);
@@ -84,17 +102,19 @@ const UserDetails = () => {
       toast.error('Erreur lors de la mise à jour.');
     } finally {
       setLoading(false);
+      closeModals();
     }
   };
 
-  // Function to delete user
   const handleDelete = async () => {
+    if (!selectedUser) return;
+
     const confirmed = window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur?');
 
     if (confirmed) {
       setLoading(true);
       try {
-        const result = await authService.deleteUserById(userId);
+        const result = await authService.deleteUserById(selectedUser._id);
 
         if (result.success) {
           toast.success('Utilisateur supprimé avec succès');
@@ -106,27 +126,27 @@ const UserDetails = () => {
         toast.error('Erreur lors de la suppression.');
       } finally {
         setLoading(false);
+        closeModals();
       }
     }
   };
 
-  // Function to handle deposits
   const handleDeposit = async () => {
     if (!amount) {
       toast.warn('Veuillez entrer un montant pour le dépôt.');
       return;
     }
 
-    if (!authUser) {
-      toast.error('Erreur: Utilisateur non connecté.');
+    if (!authUser || !selectedUser) {
+      toast.error('Erreur: Utilisateur non connecté ou sélectionné.');
       return;
     }
 
     setLoading(true);
     try {
       const response = await transferService.makeTransfer(
-        authUser.user._id,  // Sender ID (logged-in user)
-        userId,             // Receiver ID (selected user)
+        authUser.user._id,
+        selectedUser._id,
         amount,
         'deposit',
         'Deposit to user account'
@@ -134,8 +154,8 @@ const UserDetails = () => {
 
       if (response.success) {
         toast.success('Dépôt réussi.');
-        setUser(response.updatedReceiver); // Update the user with the new balance
-        setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+        setUser(response.updatedReceiver);
+        setSelectedUser(response.updatedReceiver);
       } else {
         toast.error('Erreur lors du dépôt : ' + response.message);
       }
@@ -143,26 +163,26 @@ const UserDetails = () => {
       toast.error('Erreur lors du dépôt.');
     } finally {
       setLoading(false);
+      closeModals();
     }
   };
 
-  // Function to handle withdrawals
   const handleWithdraw = async () => {
     if (!amount) {
       toast.warn('Veuillez entrer un montant pour le retrait.');
       return;
     }
 
-    if (!authUser) {
-      toast.error('Erreur: Utilisateur non connecté.');
+    if (!authUser || !selectedUser) {
+      toast.error('Erreur: Utilisateur non connecté ou sélectionné.');
       return;
     }
 
     setLoading(true);
     try {
       const response = await transferService.makeTransfer(
-        authUser.user._id,  // Sender ID (logged-in user)
-        userId,             // Receiver ID (selected user)
+        authUser.user._id,
+        selectedUser._id,
         amount,
         'withdraw',
         'Withdraw from user account'
@@ -170,8 +190,8 @@ const UserDetails = () => {
 
       if (response.success) {
         toast.success('Retrait réussi.');
-        setUser(response.updatedReceiver); // Update the user with the new balance
-        setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+        setUser(response.updatedReceiver);
+        setSelectedUser(response.updatedReceiver);
       } else {
         toast.error('Erreur lors du retrait : ' + response.message);
       }
@@ -179,16 +199,23 @@ const UserDetails = () => {
       toast.error('Erreur lors du retrait.');
     } finally {
       setLoading(false);
+      closeModals();
     }
   };
 
   return (
    <div className="flex h-screen">
       {/* User tree section */}
-      <div className="w-72 bg-gray-50 p-4 h-full shadow-lg overflow-y-auto">
-      <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
+      <div className="w-64 bg-gray-50 p-4 h-full shadow-lg overflow-y-auto">
+        <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
         {userTreeData ? (
-          <UserTreeItem user={userTreeData} onUserSelect={handleUserSelect} /> // Pass handleUserSelect
+          <UserTreeItem 
+            user={userTreeData} 
+            onUserSelect={handleUserSelect} 
+            menuOpenId={menuOpenId} 
+            setMenuOpenId={setMenuOpenId} 
+            openModals={{ openUpdateModal, openTransferModal, openDeleteModal }}
+          />
         ) : (
           <p className="text-gray-500">Aucun utilisateur sous ce créateur.</p>
         )}
@@ -301,6 +328,84 @@ const UserDetails = () => {
           )}
 
           {/* Add ToastContainer for showing notifications */}
+
+           {/* Modals for Update, Transfer, and Delete Actions */}
+           {showUpdateModal && selectedUser && (
+          <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+            <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-2xl font-bold mb-4">Modifier l'utilisateur</h2>
+              <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full border p-2 rounded-md mb-4" placeholder="Nom d'utilisateur" />
+              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdate}>Mettre à jour</button>
+              <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Transfer Modal */}
+        {showTransferModal && (
+          <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+            <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">Transférer des fonds</h2>
+
+{/* Quick amount selection buttons */}
+<div className="flex mb-4 space-x-2">
+  {[500, 1000, 5000, 25000].map((value) => (
+    <button
+      key={value}
+      className="bg-gray-200 p-2 rounded-lg"
+      onClick={() => setAmount(value)}
+      disabled={loading}
+    >
+      {value.toLocaleString()} TND
+    </button>
+  ))}
+</div>
+
+{/* Amount input */}
+<input 
+  type="text" 
+  value={amount} 
+  onChange={(e) => setAmount(e.target.value)} 
+  className="w-full border p-2 rounded-md mb-4" 
+  placeholder="Montant" 
+  disabled={loading} 
+/>
+
+{/* Deposit and Withdraw buttons */}
+<div className="flex space-x-4">
+  <button
+    className="flex-1 bg-green-500 text-white p-2 rounded-lg"
+    onClick={handleDeposit}
+    disabled={loading}
+  >
+    Dépôt
+  </button>
+  <button
+    className="flex-1 bg-red-500 text-white p-2 rounded-lg"
+    onClick={handleWithdraw}
+    disabled={loading}
+  >
+    Retrait
+  </button>
+</div>
+
+<button className="mt-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+</div>
+            
+          </motion.div>
+        )}
+
+        {/* Delete Modal */}
+        {showDeleteModal && (
+          <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+            <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+              <h2 className="text-2xl font-bold mb-4">Supprimer l'utilisateur</h2>
+              <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
+              <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={handleDelete}>Supprimer</button>
+              <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+            </div>
+          </motion.div>
+        )}
           <ToastContainer />
         </div>
       </motion.div>

@@ -124,11 +124,19 @@ const TransferHistory = ({ username }) => {
                 Montant {sortConfig.key === 'amount' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
               </th>
               <th className="py-3 px-4 text-left text-sm font-medium cursor-pointer" onClick={() => handleSort('balanceBefore')}>
-                Solde Avant {sortConfig.key === 'balanceBefore' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
+                Solde Avant Sender {sortConfig.key === 'balanceBefore ' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
               </th>
               <th className="py-3 px-4 text-left text-sm font-medium cursor-pointer" onClick={() => handleSort('balanceAfter')}>
-                Solde Après {sortConfig.key === 'balanceAfter' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
+                Solde Après Sender {sortConfig.key === 'balanceAfter' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
               </th>
+
+              <th className="py-3 px-4 text-left text-sm font-medium cursor-pointer" onClick={() => handleSort('balanceBefore')}>
+                Solde Avant receiver {sortConfig.key === 'balanceBefore ' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
+              </th>
+              <th className="py-3 px-4 text-left text-sm font-medium cursor-pointer" onClick={() => handleSort('balanceAfter')}>
+                Solde Après receiver {sortConfig.key === 'balanceAfter' && (sortConfig.direction === 'asc' ? <FaSortUp /> : <FaSortDown />)}
+              </th>
+              
               <th className="py-3 px-4 text-left text-sm font-medium">Devise</th>
             </tr>
           </thead>
@@ -146,8 +154,10 @@ const TransferHistory = ({ username }) => {
                 <td className="py-3 px-4">{transfer.receiverId?.username}</td>
                 <td className="py-3 px-4">{transfer.type}</td>
                 <td className="py-3 px-4">{transfer.amount} TND</td>
-                <td className="py-3 px-4">{transfer.balanceBefore} TND</td>
-                <td className="py-3 px-4">{transfer.balanceAfter} TND</td>
+                <td>{transfer.balanceBefore?.sender} TND</td>
+                <td>{transfer.balanceAfter?.sender} TND</td>
+                <td>{transfer.balanceBefore?.receiver} TND</td>
+                <td>{transfer.balanceAfter?.receiver} TND</td>
                 <td className="py-3 px-4">{transfer.currency || 'TND'}</td>
               </motion.tr>
             ))}
