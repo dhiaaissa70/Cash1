@@ -7,6 +7,10 @@ import DashboardPage from './Home/DashboardPage';
 import TransferHistory from './Transaction/TransferHistory';
 import RegisterForm from './Auth/Registre';
 import { AuthProvider, useAuth } from './providers/AuthContext';
+import ArbreUtilisateurs from './Auth/ArbreUtilisateurs';
+import CMS from './CMS/CMS';
+import ParametresJeux from './Settings/ParametresJeux';
+import TotauxTransactions from './Transaction/TotauxTransactions';
 
 // Composant pour les routes protégées (vérifie uniquement l'authentification)
 function ProtectedRoute({ element, redirectPath = "/login" }) {
@@ -46,7 +50,33 @@ function AppRoutes() {
                         path="/usersDetails/:userId" 
                         element={<ProtectedRoute element={<UserDetails />} />} 
                     />
+
+                        <Route 
+                        path="/ArbreUtilisateurs" 
+                        element={<ProtectedRoute element={<ArbreUtilisateurs />} />} 
+                    />
+                      <Route 
+                        path="/CMS" 
+                        element={<ProtectedRoute element={<CMS />} />} 
+                    />
+
+                    <Route 
+                        path="/ParametresJeux" 
+                        element={<ProtectedRoute element={<ParametresJeux />} />} 
+                    />
+                     <Route 
+                        path="/TotauxTransactions" 
+                        element={<ProtectedRoute element={<TotauxTransactions />} />} 
+                    />
+
+                       
+
+                    <Route 
+                        path="/ArbreUtilisateurs" 
+                        element={<ProtectedRoute element={<ArbreUtilisateurs />} />} 
+                    />
                     
+                  
                     {/* Fallback route pour toute autre route non définie */}
                     <Route path="*" element={<Navigate to="/login" replace />} />
                 </Routes>

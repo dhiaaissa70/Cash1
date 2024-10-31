@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
+import AuthService from '../service/Auth';
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
@@ -7,6 +7,10 @@ export const AuthProvider = ({ children }) => {
         const storedUser = localStorage.getItem("user");
         return storedUser ? JSON.parse(storedUser) : null;
     });
+    const authService = new AuthService();
+
+    // Fetch user profile after login or page reload
+   // Run once when the component mounts
 
     const login = (userData) => {
         localStorage.setItem("user", JSON.stringify(userData));
@@ -14,8 +18,7 @@ export const AuthProvider = ({ children }) => {
     };
 
     const updateUser = (updatedUserData) => {
-        // Merge updated user data with the existing user data
-        setUser(prevUser => {
+        setUser((prevUser) => {
             const newUser = { ...prevUser, ...updatedUserData };
             localStorage.setItem("user", JSON.stringify(newUser));
             return newUser;
@@ -24,16 +27,9 @@ export const AuthProvider = ({ children }) => {
 
     const logout = () => {
         localStorage.removeItem("user");
+        localStorage.removeItem("token"); // Also remove the token on logout
         setUser(null);
     };
-
-    // Load stored user on initial render
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
 
     return (
         <AuthContext.Provider value={{ user, login, logout, updateUser }}>

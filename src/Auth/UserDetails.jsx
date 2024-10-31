@@ -1,99 +1,208 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Pour obtenir l'ID de l'utilisateur depuis l'URL
-import Auth from '../service/Auth'; // Service Auth
-import { motion } from 'framer-motion'; // Pour les animations
-import UserTree from './UsersTree'; // Composant UserTree
+import { useParams, useNavigate } from 'react-router-dom';
+import Auth from '../service/Auth'; // Service Auth for API requests
+import TransferService from '../service/Trunsuction'; // Import the TransferService
+import { motion } from 'framer-motion';
+import { useAuth } from '../providers/AuthContext'; // Assuming useAuth provides the logged-in user's info
+import { ToastContainer, toast } from 'react-toastify'; // Import toast components
+import 'react-toastify/dist/ReactToastify.css'; // Import toast styles
+import UserTreeItem from './UsersTree';
 
 const UserDetails = () => {
-  const { userId } = useParams(); // Obtenir l'ID de l'utilisateur depuis les paramètres de l'URL
+  const { userId } = useParams(); // Get the userId from URL params (this will be the receiver's ID)
   const navigate = useNavigate();
-  const [user, setUser] = useState(null); // Pour stocker les données de l'utilisateur
-  const [amount, setAmount] = useState(''); // Pour stocker le montant
-  const [newUsername, setNewUsername] = useState(''); // Pour le nouveau nom d'utilisateur
-  const [role, setRole] = useState(''); // Pour le rôle de l'utilisateur
-  const [userTreeData, setUserTreeData] = useState([]); // État pour les données de l'arbre des utilisateurs
+  const [user, setUser] = useState(null); // Store user data
+  const [amount, setAmount] = useState(''); // Store amount
+  const [newUsername, setNewUsername] = useState(''); // New username state
+  const [role, setRole] = useState(''); // Role state
+  const [userTreeData, setUserTreeData] = useState([]); // User tree data state
+  const [selectedUser, setSelectedUser] = useState(null); // State for selected user
+  const { user: authUser } = useAuth(); // Retrieve logged-in user and token from useAuth
   const authService = new Auth();
+  const transferService = new TransferService(); // Initialize TransferService
+  const [loading, setLoading] = useState(false); // Loading state to disable buttons during actions
+  const [transactionMessage, setTransactionMessage] = useState(''); // For displaying transaction success or error messages
 
-  // Récupérer l'utilisateur par ID lors du montage du composant
+  const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"]; // Predefined roles
+
+  // Fetch user data on component mount
   useEffect(() => {
     const fetchUser = async () => {
-      const result = await authService.getUserById(userId);
-      if (result.success) {
-        setUser(result.user);
-        setNewUsername(result.user.username); // Définir la valeur par défaut pour les champs de mise à jour
-        setRole(result.user.role);
+      setLoading(true);
+      try {
+        const result = await authService.getUserById(userId);
 
-        // Récupérer les utilisateurs créés par cet utilisateur pour l'arbre des utilisateurs
-        const treeResult = await authService.getUsersByCreaterId(userId);
-        if (treeResult.success) {
-          setUserTreeData(treeResult.users); // Définir les données de l'arbre des utilisateurs
+        if (result.success) {
+          setUser(result.user);
+          setSelectedUser(result.user); // Set the top-level user as selected by default
+          setNewUsername(result.user.username);
+          setRole(result.user.role);
+
+          const treeResult = await authService.getUsersByCreaterId(userId);
+          if (treeResult.success) {
+            setUserTreeData(treeResult.user); // Set the root user with children
+          } else {
+            console.error("Error fetching user tree:", treeResult.message);
+          }
         } else {
-          console.error(treeResult.message);
+          console.error("Error fetching user:", result.message);
         }
-      } else {
-        console.error(result.message);
+      } catch (error) {
+        console.error("Error fetching user:", error);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchUser();
-  }, [userId, authService]); // Utilisez userId et authService comme dépendances
+  }, [userId]);
 
-  // Fonction pour mettre à jour les détails de l'utilisateur
+  const handleUserSelect = (user) => {
+    setSelectedUser(user);
+  };
+
+
+  // Function to update user details
   const handleUpdate = async () => {
     const updatedDetails = {
-      username: newUsername,
-      role: role,
+      username: newUsername, // Updated username
+      role: role,            // Updated role
     };
 
-    const result = await authService.updateUser(userId, updatedDetails); // Passer les détails mis à jour
-    if (result.success) {
-      alert('Utilisateur mis à jour avec succès');
-      setUser(result.user); // Mettre à jour l'utilisateur dans l'état après une mise à jour réussie
-    } else {
-      console.error(result.message);
+    setLoading(true);
+    try {
+      const result = await authService.updateUser(userId, updatedDetails);
+
+      if (result.success) {
+        toast.success('Utilisateur mis à jour avec succès');
+        setUser(result.user); // Update the state with the new user data
+        setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+      } else {
+        toast.error('Erreur lors de la mise à jour : ' + result.message);
+      }
+    } catch (error) {
+      toast.error('Erreur lors de la mise à jour.');
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Fonction pour supprimer l'utilisateur
+  // Function to delete user
   const handleDelete = async () => {
     const confirmed = window.confirm('Êtes-vous sûr de vouloir supprimer cet utilisateur?');
+
     if (confirmed) {
-      const result = await authService.deleteUserById(userId);
-      if (result.success) {
-        alert('Utilisateur supprimé avec succès');
-        navigate('/users'); // Rediriger vers la liste des utilisateurs
-      } else {
-        console.error(result.message);
+      setLoading(true);
+      try {
+        const result = await authService.deleteUserById(userId);
+
+        if (result.success) {
+          toast.success('Utilisateur supprimé avec succès');
+          setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+        } else {
+          toast.error('Erreur lors de la suppression : ' + result.message);
+        }
+      } catch (error) {
+        toast.error('Erreur lors de la suppression.');
+      } finally {
+        setLoading(false);
       }
     }
   };
 
-  // Si les données de l'utilisateur ne sont pas encore chargées
-  if (!user) {
-    return <div>Chargement des données de l'utilisateur...</div>;
-  }
+  // Function to handle deposits
+  const handleDeposit = async () => {
+    if (!amount) {
+      toast.warn('Veuillez entrer un montant pour le dépôt.');
+      return;
+    }
+
+    if (!authUser) {
+      toast.error('Erreur: Utilisateur non connecté.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await transferService.makeTransfer(
+        authUser.user._id,  // Sender ID (logged-in user)
+        userId,             // Receiver ID (selected user)
+        amount,
+        'deposit',
+        'Deposit to user account'
+      );
+
+      if (response.success) {
+        toast.success('Dépôt réussi.');
+        setUser(response.updatedReceiver); // Update the user with the new balance
+        setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+      } else {
+        toast.error('Erreur lors du dépôt : ' + response.message);
+      }
+    } catch (error) {
+      toast.error('Erreur lors du dépôt.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to handle withdrawals
+  const handleWithdraw = async () => {
+    if (!amount) {
+      toast.warn('Veuillez entrer un montant pour le retrait.');
+      return;
+    }
+
+    if (!authUser) {
+      toast.error('Erreur: Utilisateur non connecté.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await transferService.makeTransfer(
+        authUser.user._id,  // Sender ID (logged-in user)
+        userId,             // Receiver ID (selected user)
+        amount,
+        'withdraw',
+        'Withdraw from user account'
+      );
+
+      if (response.success) {
+        toast.success('Retrait réussi.');
+        setUser(response.updatedReceiver); // Update the user with the new balance
+        setTimeout(() => navigate('/users'), 2000); // Redirect after 2 seconds
+      } else {
+        toast.error('Erreur lors du retrait : ' + response.message);
+      }
+    } catch (error) {
+      toast.error('Erreur lors du retrait.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
-    <div className="flex h-screen"> {/* Disposition pleine hauteur */}
-      {/* Section de l'arbre des utilisateurs */}
-      <div className="w-64 bg-gray-50 p-6 h-full shadow-lg">
-        <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
-        {userTreeData.length > 0 ? (
-          <UserTree users={userTreeData} />
+   <div className="flex h-screen">
+      {/* User tree section */}
+      <div className="w-72 bg-gray-50 p-4 h-full shadow-lg overflow-y-auto">
+      <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
+        {userTreeData ? (
+          <UserTreeItem user={userTreeData} onUserSelect={handleUserSelect} /> // Pass handleUserSelect
         ) : (
           <p className="text-gray-500">Aucun utilisateur sous ce créateur.</p>
         )}
       </div>
 
-      {/* Section des détails de l'utilisateur */}
+      {/* User details section */}
       <motion.div className="flex-1 p-6 bg-gray-50 overflow-y-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-3xl font-bold">{user.username}</h2>
+          <h2 className="text-3xl font-bold">{user?.username || 'Nom d\'utilisateur'}</h2>
           <div>
-            <button className="bg-red-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleDelete}>
+            <button className="bg-red-500 text-white px-4 py-2 rounded-lg mr-2" onClick={handleDelete} disabled={loading}>
               Supprimer
             </button>
-            <button className="bg-yellow-400 text-white px-4 py-2 rounded-lg" onClick={handleUpdate}>
+            <button className="bg-yellow-400 text-white px-4 py-2 rounded-lg" onClick={handleUpdate} disabled={loading}>
               Mettre à jour
             </button>
           </div>
@@ -102,66 +211,97 @@ const UserDetails = () => {
         <div className="bg-white shadow-md rounded-lg p-4">
           <div className="mb-4">
             <label className="font-bold">ID:</label>
-            <span className="ml-2">{user._id}</span>
+            <span className="ml-2">{user?._id}</span>
           </div>
 
           <div className="mb-4">
             <label className="font-bold">Nom d'utilisateur:</label>
             <input
-              type="text" // S'assurer que le type est correct
-              value={newUsername} // Liaison à l'état
-              onChange={(e) => setNewUsername(e.target.value)} // Met à jour la valeur du nom d'utilisateur
+              type="text"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
               className="ml-2 border p-2 rounded-md w-full"
               placeholder="Nom d'utilisateur"
+              disabled={loading}
             />
           </div>
 
+          {/* Dropdown for selecting the role */}
           <div className="mb-4">
             <label className="font-bold">Rôle:</label>
-            <input
-              type="text" // S'assurer que le type est correct
-              value={role} // Liaison à l'état
-              onChange={(e) => setRole(e.target.value)} // Met à jour la valeur du rôle
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
               className="ml-2 border p-2 rounded-md w-full"
-              placeholder="Rôle"
-            />
+              disabled={loading}
+            >
+              {roles.map((roleOption) => (
+                <option key={roleOption} value={roleOption}>
+                  {roleOption}
+                </option>
+              ))}
+            </select>
           </div>
 
           <div className="mb-4">
             <label className="font-bold">Solde:</label>
-            <span className="ml-2">{user.balance} TND</span>
+            <span className="ml-2">{user?.balance || 0} TND</span>
           </div>
 
-          {/* Champ de montant */}
+          {/* Amount field */}
           <div className="mb-4">
             <label className="font-bold">Montant:</label>
             <input
-              type="text" // S'assurer que le type est correct
-              value={amount} // Liaison à l'état
-              onChange={(e) => setAmount(e.target.value)} // Mettre à jour la valeur du montant
+              type="text"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
               className="w-full border p-2 rounded-md"
               placeholder="Montant"
+              disabled={loading}
             />
           </div>
 
-          {/* Boutons de montant rapide */}
+          {/* Quick amount buttons */}
           <div className="flex mb-4 space-x-2">
             {[500, 1000, 5000, 25000].map((value) => (
               <button
                 key={value}
                 className="bg-gray-200 p-2 rounded-lg"
-                onClick={() => setAmount(value)} // Définir le montant au clic
+                onClick={() => setAmount(value)}
+                disabled={loading}
               >
                 {value.toLocaleString()} TND
               </button>
             ))}
           </div>
 
-          {/* Boutons de dépôt et retrait */}
+          {/* Deposit and withdrawal buttons */}
           <div className="flex space-x-4">
-            <button className="flex-1 bg-green-500 text-white p-2 rounded-lg">Dépôt</button>
-            <button className="flex-1 bg-red-500 text-white p-2 rounded-lg">Retrait</button>
+            <button
+              className="flex-1 bg-green-500 text-white p-2 rounded-lg"
+              onClick={handleDeposit}
+              disabled={loading}
+            >
+              Dépôt
+            </button>
+            <button
+              className="flex-1 bg-red-500 text-white p-2 rounded-lg"
+              onClick={handleWithdraw}
+              disabled={loading}
+            >
+              Retrait
+            </button>
           </div>
+
+          {/* Display transaction messages */}
+          {transactionMessage && (
+            <div className="mt-4 p-2 text-center bg-gray-200 rounded">
+              {transactionMessage}
+            </div>
+          )}
+
+          {/* Add ToastContainer for showing notifications */}
+          <ToastContainer />
         </div>
       </motion.div>
     </div>

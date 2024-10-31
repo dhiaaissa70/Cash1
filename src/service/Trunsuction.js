@@ -11,6 +11,10 @@ class TransferService {
         try {
             const token = localStorage.getItem('token');
 
+            console.log("Sending transfer request to /tr/transfer");
+            console.log("Request payload:", { senderId, receiverId, amount, type, note });
+            console.log("Authorization token:", token);
+
             const response = await this.api.post("/tr/transfer", {
                 senderId,
                 receiverId,
@@ -23,6 +27,8 @@ class TransferService {
                 }
             });
 
+            console.log("Transfer response:", response.data);
+
             return {
                 success: true,
                 message: response.data.message,
@@ -32,8 +38,10 @@ class TransferService {
             };
         } catch (error) {
             console.error("Erreur lors de la création du transfert :", error);
-
+            
             if (error.response) {
+                console.log("Error response status:", error.response.status);
+                console.log("Error response data:", error.response.data);
                 return {
                     success: false,
                     message: error.response.data.message || "Une erreur est survenue lors de la création du transfert",
