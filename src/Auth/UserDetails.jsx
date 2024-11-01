@@ -16,7 +16,9 @@ const UserDetails = () => {
   const [newUsername, setNewUsername] = useState('');
   const [role, setRole] = useState('');
   const [userTreeData, setUserTreeData] = useState([]);
-  const [selectedUser, setSelectedUser] = useState(null); // Updated user selection
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+
   const { user: authUser } = useAuth();
   const authService = new Auth();
   const transferService = new TransferService();
@@ -334,9 +336,38 @@ const UserDetails = () => {
           <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
             <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
               <h2 className="text-2xl font-bold mb-4">Modifier l'utilisateur</h2>
-              <input type="text" value={newUsername} onChange={(e) => setNewUsername(e.target.value)} className="w-full border p-2 rounded-md mb-4" placeholder="Nom d'utilisateur" />
-              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdate}>Mettre à jour</button>
-              <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+              <input
+                type="text"
+                value={newUsername}
+                onChange={(e) => setNewUsername(e.target.value)}
+                className="w-full border p-2 rounded-md mb-4"
+                placeholder="Nom d'utilisateur"
+              />
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full border p-2 rounded-md mb-4"
+              >
+                {roles.map((roleOption) => (
+                  <option key={roleOption} value={roleOption}>
+                    {roleOption}
+                  </option>
+                ))}
+              </select>
+              
+              <input
+                type="password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                className="w-full border p-2 rounded-md mb-4"
+                placeholder="Nouveau mot de passe"
+              />
+              <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdate}>
+                Mettre à jour
+              </button>
+              <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>
+                Annuler
+              </button>
             </div>
           </motion.div>
         )}
