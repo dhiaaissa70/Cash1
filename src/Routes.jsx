@@ -12,12 +12,11 @@ import ArbreUtilisateurs from './Auth/ArbreUtilisateurs';
 import CMS from './CMS/CMS';
 import ParametresJeux from './Settings/ParametresJeux';
 import TotauxTransactions from './Transaction/TotauxTransactions';
-
+import UserTreeViewPage from './Auth/UserTreeView'
 // Composant pour les routes protégées (vérifie uniquement l'authentification)
 function ProtectedRoute({ element, redirectPath = "/login" }) {
     const { user } = useAuth();
     const isAuthenticated = !!user;
-
     return isAuthenticated ? element : <Navigate to={redirectPath} replace />;
 }
 
@@ -54,7 +53,7 @@ function AppRoutes() {
 
                         <Route 
                         path="/ArbreUtilisateurs" 
-                        element={<ProtectedRoute element={<ArbreUtilisateurs />} />} 
+                        element={<ProtectedRoute element={<UserTreeViewPage />} />} 
                     />
                       <Route 
                         path="/CMS" 
@@ -70,13 +69,7 @@ function AppRoutes() {
                         element={<ProtectedRoute element={<TotauxTransactions />} />} 
                     />
 
-                       
-
-                    <Route 
-                        path="/ArbreUtilisateurs" 
-                        element={<ProtectedRoute element={<ArbreUtilisateurs />} />} 
-                    />
-                    
+                
                   
                     {/* Fallback route pour toute autre route non définie */}
                     <Route path="*" element={<Navigate to="/login" replace />} />

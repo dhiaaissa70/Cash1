@@ -16,17 +16,12 @@ const Header = () => {
         navigate('/login');
     };
 
-    // Detect if user is modified
-    useEffect(() => {
-        console.log("User data changed:", user);
-        // Actions on user change (if any) can be performed here.
-    }, [user]); // Dependency on `user` to detect changes
-
+   
     return (
         <div className="flex flex-col sm:flex-row items-center justify-between bg-gray-900 text-white p-4 shadow-lg">
             <h1 className="text-2xl font-bold">Dashboard</h1>
             <div className="flex flex-col sm:flex-row items-center space-y-4 sm:space-y-0 sm:space-x-4 mt-4 sm:mt-0">
-                {user ? (
+                {user && user.user ? (
                     <>
                         <div className="flex items-center space-x-2 border-r border-gray-600 pr-4">
                             <FaUserCircle className="text-3xl" />
@@ -51,7 +46,7 @@ const Header = () => {
                         className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded transition duration-200" 
                         onClick={handleLogin}
                     >
-                      
+                        Login
                     </button>
                 )}
             </div>

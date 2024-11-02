@@ -103,7 +103,6 @@ const Users = () => {
 
     const handleEdit = (userId) => {
         navigate(`/usersDetails/${userId}`);
-        console.log(`Modifier l'utilisateur avec l'ID : ${userId}`);
     };
 
     const formatUserId = (userId) => {

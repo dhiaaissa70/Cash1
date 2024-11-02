@@ -2,7 +2,7 @@ import React from 'react';
 import { FaUserPlus, FaUsers, FaReceipt, FaChartBar, FaGlobe, FaCog, FaSyncAlt, FaHistory, FaSitemap, FaTicketAlt, FaMoneyBill, FaHandshake } from 'react-icons/fa';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom'; // For routing
-
+import UserTreeViewPage from '../Auth/UserTreeView';
 const DashboardPage = () => {
   const navigate = useNavigate(); // Initialize router navigation
 
