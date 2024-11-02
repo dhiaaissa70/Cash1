@@ -102,7 +102,7 @@ const UserDetails = () => {
   const handleDeposit = async () => {
     try {
       const response = await transferService.makeTransfer(
-        authUser.user.user._id,
+        authUser.user._id,
         selectedUser._id,
         amount,
         "deposit",
@@ -123,7 +123,7 @@ const UserDetails = () => {
   const handleWithdraw = async () => {
     try {
       const response = await transferService.makeTransfer(
-        authUser.user.user._id,
+        authUser.user._id,
         selectedUser._id,
         amount,
         "withdraw",
