@@ -17,14 +17,28 @@ const UserDetails = () => {
   const [role, setRole] = useState('');
   const [userTreeData, setUserTreeData] = useState([]);
   const [selectedUser, setSelectedUser] = useState(null);
-  const [newPassword, setNewPassword] = useState(''); // État pour le nouveau mot de passe
-  const  authUser  = useAuth();
+  const [newPassword, setNewPassword] = useState('');
+  const { user: authUser } = useAuth();
   const authService = new Auth();
   const transferService = new TransferService();
   const [loading, setLoading] = useState(false);
   const [transactionMessage, setTransactionMessage] = useState('');
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showTransferModal, setShowTransferModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"];
+
+  const [menuOpenId, setMenuOpenId] = useState(null);
+
+  const openUpdateModal = () => {
+    if (selectedUser) {
+      setNewUsername(selectedUser.username);
+      setRole(selectedUser.role);
+    }
+    setShowUpdateModal(true);
+  };
+  const openTransferModal = () => setShowTransferModal(true);
+  const openDeleteModal = () => setShowDeleteModal(true);
 
   const closeModals = () => {
     setShowUpdateModal(false);
@@ -53,7 +67,6 @@ const UserDetails = () => {
         setLoading(false);
       }
     };
-
     fetchUser();
   }, [userId]);
 
@@ -79,14 +92,12 @@ const UserDetails = () => {
       const deleteUserResponse = await authService.deleteUserById(selectedUser._id);
       if (deleteUserResponse.success) {
         toast.success("Utilisateur supprimé avec succès !");
-        // Redirigez ou effectuez une action après la suppression, par exemple :
-        navigate('/users'); // Remplacez par la route appropriée
+        navigate('/users');
       } else {
         toast.error("Erreur lors de la suppression de l'utilisateur.");
       }
     }
   };
-
 
   const handleDeposit = async () => {
     try {
@@ -97,12 +108,9 @@ const UserDetails = () => {
         "deposit",
         ""
       );
-      console.log(response)
       if (response.success) {
         toast.success("Depot effectué avec succès !");
-        setTimeout(() => {
-          window.location.reload(); // Recharge la page après 2 secondes
-        }, 3000);
+        setTimeout(() => window.location.reload(), 3000);
       } else {
         toast.error("Erreur lors de l'exécution du dépôt.");
       }
@@ -111,7 +119,6 @@ const UserDetails = () => {
       toast.error("Une erreur est survenue lors du dépôt. Veuillez réessayer.");
     }
   };
-  
 
   const handleWithdraw = async () => {
     try {
@@ -122,12 +129,9 @@ const UserDetails = () => {
         "withdraw",
         ""
       );
-  
       if (response.success) {
         toast.success("Retrait effectué avec succès !");
-        setTimeout(() => {
-          window.location.reload(); // Recharge la page après 2 secondes
-        }, 3000);
+        setTimeout(() => window.location.reload(), 3000);
       } else {
         toast.error("Erreur lors de l'exécution du retrait.");
       }
@@ -136,14 +140,29 @@ const UserDetails = () => {
       toast.error("Une erreur est survenue lors du retrait. Veuillez réessayer.");
     }
   };
-  
 
   return (
-    <div className="flex flex-col h-screen bg-gray-100 p-6">
-      <div className="bg-white shadow-lg rounded-lg p-6">
+    <div className="flex h-screen">
+      <div className="w-64 bg-gray-50 p-4 h-full shadow-lg overflow-y-auto">
+        <h3 className="text-xl font-bold mb-4">Arbre des utilisateurs</h3>
+        {userTreeData ? (
+          <UserTreeItem 
+            user={userTreeData} 
+            onUserSelect={(user) => setSelectedUser(user)} 
+            menuOpenId={menuOpenId} 
+            setMenuOpenId={setMenuOpenId} 
+            openModals={{ openUpdateModal, openTransferModal, openDeleteModal }}
+          />
+        ) : (
+          <p className="text-gray-500">Aucun utilisateur sous ce créateur.</p>
+        )}
+      </div>
+      
+      <div className="flex-1 p-6 bg-gray-50 overflow-y-auto" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
         <div className="flex justify-center items-center pt-8">
           <h4 className="text-2xl font-bold text-gray-800">Modifier Utilisateur</h4>
         </div>
+        
         <div className="mb-4">
           <label className="font-bold">ID:</label>
           <span className="ml-2 text-gray-600">{user?._id}</span>
@@ -189,23 +208,21 @@ const UserDetails = () => {
           />
         </div>
 
-        <div className='pt-1 pb-4'>
-          <div className="flex space-x-4">
-            <button
-              className="flex-1 bg-green-600 text-white p-2 rounded-lg hover:bg-green-500 transition"
-              onClick={handleUpdate}
-              disabled={loading}
-            >
-              Mettre à jour
-            </button>
-            <button
-              className="flex-1 bg-red-600 text-white p-2 rounded-lg hover:bg-red-500 transition"
-              onClick={handleDelete}
-              disabled={loading}
-            >
-              Supprimer
-            </button>
-          </div>
+        <div className="flex space-x-4 pt-1 pb-4">
+          <button
+            className="flex-1 bg-green-600 text-white p-2 rounded-lg hover:bg-green-500 transition"
+            onClick={handleUpdate}
+            disabled={loading}
+          >
+            Mettre à jour
+          </button>
+          <button
+            className="flex-1 bg-red-600 text-white p-2 rounded-lg hover:bg-red-500 transition"
+            onClick={handleDelete}
+            disabled={loading}
+          >
+            Supprimer
+          </button>
         </div>
 
         <hr className="my-4 border-gray-300" />
@@ -268,6 +285,102 @@ const UserDetails = () => {
       </div>
 
       <ToastContainer />
+
+      {/* Modals for Update, Transfer, and Delete Actions */}
+      {showUpdateModal && selectedUser && (
+        <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+          <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">Modifier l'utilisateur</h2>
+            <input
+              type="text"
+              value={newUsername}
+              onChange={(e) => setNewUsername(e.target.value)}
+              className="w-full border p-2 rounded-md mb-4"
+              placeholder="Nom d'utilisateur"
+            />
+            <select
+              value={role}
+              onChange={(e) => setRole(e.target.value)}
+              className="w-full border p-2 rounded-md mb-4"
+            >
+              {roles.map((roleOption) => (
+                <option key={roleOption} value={roleOption}>
+                  {roleOption}
+                </option>
+              ))}
+            </select>
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              className="w-full border p-2 rounded-md mb-4"
+              placeholder="Nouveau mot de passe"
+            />
+            <button className="bg-blue-500 text-white px-4 py-2 rounded" onClick={handleUpdate}>
+              Mettre à jour
+            </button>
+            <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>
+              Annuler
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {showTransferModal && (
+        <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+          <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">Transférer des fonds</h2>
+            <div className="flex mb-4 space-x-2">
+              {[500, 1000, 5000, 25000].map((value) => (
+                <button
+                  key={value}
+                  className="bg-gray-200 p-2 rounded-lg"
+                  onClick={() => setAmount(value)}
+                  disabled={loading}
+                >
+                  {value.toLocaleString()} TND
+                </button>
+              ))}
+            </div>
+            <input 
+              type="text" 
+              value={amount} 
+              onChange={(e) => setAmount(e.target.value)} 
+              className="w-full border p-2 rounded-md mb-4" 
+              placeholder="Montant" 
+              disabled={loading} 
+            />
+            <div className="flex space-x-4">
+              <button
+                className="flex-1 bg-green-500 text-white p-2 rounded-lg"
+                onClick={handleDeposit}
+                disabled={loading}
+              >
+                Dépôt
+              </button>
+              <button
+                className="flex-1 bg-red-500 text-white p-2 rounded-lg"
+                onClick={handleWithdraw}
+                disabled={loading}
+              >
+                Retrait
+              </button>
+            </div>
+            <button className="mt-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+          </div>
+        </motion.div>
+      )}
+
+      {showDeleteModal && (
+        <motion.div className="fixed inset-0 bg-gray-800 bg-opacity-75 flex justify-center items-center" initial={{ opacity: 0 }} animate={{ opacity: 1 }} onClick={closeModals}>
+          <div className="bg-white p-6 rounded-lg shadow-lg" onClick={(e) => e.stopPropagation()}>
+            <h2 className="text-2xl font-bold mb-4">Supprimer l'utilisateur</h2>
+            <p>Êtes-vous sûr de vouloir supprimer cet utilisateur ?</p>
+            <button className="bg-red-500 text-white px-4 py-2 rounded" onClick={handleDelete}>Supprimer</button>
+            <button className="ml-4 px-4 py-2 rounded" onClick={closeModals}>Annuler</button>
+          </div>
+        </motion.div>
+      )}
     </div>
   );
 };
