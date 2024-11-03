@@ -6,6 +6,7 @@ import { motion } from 'framer-motion';
 const Users = () => {
     const authService = new Auth();
     const [users, setUsers] = useState([]);
+    const [filteredUsers, setFilteredUsers] = useState([]); // State for filtered users
     const [sortOrder, setSortOrder] = useState({ key: '', order: 'asc' });
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
@@ -14,6 +15,7 @@ const Users = () => {
     const usersPerPageOptions = [10, 25, 50, 100];
     const [tooltipInfo, setTooltipInfo] = useState(null);
     const [showTooltip, setShowTooltip] = useState(false);
+    const [searchQuery, setSearchQuery] = useState(""); // New state for search query
     const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
     const navigate = useNavigate();
 
@@ -22,8 +24,10 @@ const Users = () => {
             const response = await authService.getAllUsers();
             if (response.success && Array.isArray(response.users)) {
                 setUsers(response.users);
+                setFilteredUsers(response.users); // Initialize filteredUsers with all users
             } else {
                 setUsers([]);
+                setFilteredUsers([]);
             }
         } catch (err) {
             setError('Erreur lors de la récupération des utilisateurs.');
@@ -35,6 +39,19 @@ const Users = () => {
     useEffect(() => {
         fetchUsers();
     }, []);
+
+    useEffect(() => {
+        // Filter users based on the search query
+        const results = users.filter(user =>
+            user.username.toLowerCase().includes(searchQuery.toLowerCase())
+        );
+        setFilteredUsers(results);
+        setCurrentPage(1); // Reset to the first page when search query changes
+    }, [searchQuery, users]);
+
+    const handleSearchChange = (event) => {
+        setSearchQuery(event.target.value);
+    };
 
     const formatDate = (dateString) => {
         const date = new Date(dateString);
@@ -50,14 +67,14 @@ const Users = () => {
 
     const handleSort = (key) => {
         const newOrder = sortOrder.key === key && sortOrder.order === 'asc' ? 'desc' : 'asc';
-        const sortedUsers = [...users].sort((a, b) => {
+        const sortedUsers = [...filteredUsers].sort((a, b) => {
             if (key === 'balance') {
                 return newOrder === 'asc' ? a[key] - b[key] : b[key] - a[key];
             }
             return newOrder === 'asc' ? a[key].localeCompare(b[key]) : b[key].localeCompare(a[key]);
         });
 
-        setUsers(sortedUsers);
+        setFilteredUsers(sortedUsers);
         setSortOrder({ key, order: newOrder });
     };
 
@@ -78,14 +95,14 @@ const Users = () => {
         }
     };
 
-    const userCount = users.length;
-    const totalBalance = users.reduce((acc, user) => acc + user.balance, 0);
+    const userCount = filteredUsers.length;
+    const totalBalance = filteredUsers.reduce((acc, user) => acc + user.balance, 0);
     const totalPages = Math.ceil(userCount / usersPerPage);
 
     const getCurrentUsers = () => {
         const indexOfLastUser = currentPage * usersPerPage;
         const indexOfFirstUser = indexOfLastUser - usersPerPage;
-        return users.slice(indexOfFirstUser, indexOfLastUser);
+        return filteredUsers.slice(indexOfFirstUser, indexOfLastUser); // Paginate filteredUsers instead of users
     };
 
     const currentUsers = getCurrentUsers();
@@ -109,9 +126,8 @@ const Users = () => {
         return `#${userId.slice(-10)}`;
     };
 
-    // Updated handleMouseEnter to handle null values
     const handleMouseEnter = (creator, event) => {
-        if (creator) {  // Ensure creator is not null or undefined
+        if (creator) {
             setTooltipInfo({
                 username: creator.username || 'N/A',
                 role: creator.role || 'N/A',
@@ -127,14 +143,33 @@ const Users = () => {
         setShowTooltip(false);
     };
 
+
+    const handleGoBack = () => {
+        navigate(-1); // Navigate back to the previous page
+    };
+
     if (loading) return <div className="flex justify-center items-center h-64"><div className="text-xl font-semibold">Loading...</div></div>;
     if (error) return <div className="text-red-500 text-center font-medium py-10">{error}</div>;
 
     return (
         <div className="container mx-auto p-6 bg-gray-50 rounded-xl shadow-lg">
+
+                <button
+                onClick={handleGoBack}
+                className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
+            >
+                ← Retour
+            </button>
             <h1 className="text-4xl font-extrabold text-gray-800 mb-6">Tableau des utilisateurs</h1>
-            
-            {/* Users per page select */}
+            <div className="mb-6 flex items-center">
+                <input
+                    type="text"
+                    placeholder="Rechercher par nom d'utilisateur"
+                    value={searchQuery}
+                    onChange={handleSearchChange}
+                    className="w-full p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
+                />
+            </div>
             <div className="flex justify-between items-center mb-6">
                 <label htmlFor="usersPerPage" className="text-lg font-medium">Utilisateurs par page :</label>
                 <select
@@ -151,7 +186,6 @@ const Users = () => {
                 </select>
             </div>
 
-            {/* Table */}
             <motion.div
                 className="overflow-x-auto rounded-lg shadow-sm"
                 initial={{ opacity: 0 }}
