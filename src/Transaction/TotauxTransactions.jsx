@@ -5,19 +5,20 @@ import { useNavigate } from "react-router-dom";
 
 const TransactionSummary = () => {
     const [transactionSummary, setTransactionSummary] = useState([]);
-    const [filteredSummary, setFilteredSummary] = useState([]); // State for filtered transactions
+    const [filteredSummary, setFilteredSummary] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [searchQuery, setSearchQuery] = useState(""); // New state for search query
+    const [searchQuery, setSearchQuery] = useState("");
     const [sortOrder, setSortOrder] = useState({ key: '', order: 'asc' });
     const [currentPage, setCurrentPage] = useState(1);
     const [entriesPerPage, setEntriesPerPage] = useState(10);
     const entriesPerPageOptions = [10, 25, 50, 100];
 
+    const [startDate, setStartDate] = useState('');
+    const [endDate, setEndDate] = useState('');
+    
     const transferService = new TransferService();
-
     const navigate = useNavigate();
-
 
     useEffect(() => {
         const fetchTransactions = async () => {
@@ -44,15 +45,15 @@ const TransactionSummary = () => {
         const summary = {};
 
         transactions.forEach((transaction) => {
-            const { senderId, receiverId, type, amount } = transaction;
+            const { senderId, receiverId, type, amount, date } = transaction;
             const senderUsername = senderId?.username || 'Unknown Sender';
             const receiverUsername = receiverId?.username || 'Unknown Receiver';
 
             if (!summary[senderUsername]) {
-                summary[senderUsername] = { deposit: 0, withdraw: 0, currency: 'TND' };
+                summary[senderUsername] = { deposit: 0, withdraw: 0, currency: 'TND', date };
             }
             if (!summary[receiverUsername]) {
-                summary[receiverUsername] = { deposit: 0, withdraw: 0, currency: 'TND' };
+                summary[receiverUsername] = { deposit: 0, withdraw: 0, currency: 'TND', date };
             }
 
             if (type === 'deposit') {
@@ -62,16 +63,17 @@ const TransactionSummary = () => {
             }
         });
 
-        const summaryArray = Object.entries(summary).map(([username, { deposit, withdraw, currency }]) => ({
+        const summaryArray = Object.entries(summary).map(([username, { deposit, withdraw, currency, date }]) => ({
             username,
             deposit,
             withdraw,
             total: deposit - withdraw,
-            currency
+            currency,
+            date: new Date(date)
         }));
 
         setTransactionSummary(summaryArray);
-        setFilteredSummary(summaryArray); // Initialize filteredSummary with all data
+        setFilteredSummary(summaryArray);
     };
 
     const handleSort = (key) => {
@@ -88,7 +90,7 @@ const TransactionSummary = () => {
 
     const handleSearchChange = (event) => {
         setSearchQuery(event.target.value);
-        setCurrentPage(1); // Reset to the first page when search query changes
+        setCurrentPage(1);
     };
 
     useEffect(() => {
@@ -98,12 +100,24 @@ const TransactionSummary = () => {
         setFilteredSummary(results);
     }, [searchQuery, transactionSummary]);
 
+    useEffect(() => {
+        // Filter by date range when startDate or endDate changes
+        const results = transactionSummary.filter(entry => {
+            const entryDate = new Date(entry.date);
+            const start = startDate ? new Date(startDate) : null;
+            const end = endDate ? new Date(endDate) : null;
+
+            return (!start || entryDate >= start) && (!end || entryDate <= end);
+        });
+        setFilteredSummary(results);
+    }, [startDate, endDate, transactionSummary]);
+
     const totalEntries = filteredSummary.length;
     const totalPages = Math.ceil(totalEntries / entriesPerPage);
 
     const getCurrentEntries = () => {
         const startIndex = (currentPage - 1) * entriesPerPage;
-        return filteredSummary.slice(startIndex, startIndex + entriesPerPage); // Use filteredSummary for pagination
+        return filteredSummary.slice(startIndex, startIndex + entriesPerPage);
     };
 
     const currentEntries = getCurrentEntries();
@@ -114,14 +128,15 @@ const TransactionSummary = () => {
         }
     };
 
+    const handleGoBack = () => {
+        navigate(-1);
+    };
+
     if (loading) return <div className="flex justify-center items-center h-64"><div className="text-xl font-semibold">Loading...</div></div>;
     if (error) return <div className="text-red-500 text-center font-medium py-10">{error}</div>;
-    const handleGoBack = () => {
-      navigate(-1); // Navigate back to the previous page
-  };
+
     return (
         <div className="container mx-auto p-6 bg-gray-50 rounded-xl shadow-lg">
-
             <button
                 onClick={handleGoBack}
                 className="mb-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
@@ -130,20 +145,40 @@ const TransactionSummary = () => {
             </button>
             <h1 className="text-4xl font-extrabold text-gray-800 mb-6">Résumé des transactions</h1>
             
-            <div className="flex justify-between items-center mb-6">
-                <label htmlFor="entriesPerPage" className="text-lg font-medium">Entrées par page :</label>
-                <select
-                    id="entriesPerPage"
-                    value={entriesPerPage}
-                    onChange={(e) => setEntriesPerPage(Number(e.target.value))}
-                    className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-400"
-                >
-                    {entriesPerPageOptions.map(option => (
-                        <option key={option} value={option}>
-                            {option}
-                        </option>
-                    ))}
-                </select>
+            <div className="flex flex-col sm:flex-row sm:space-x-4 items-center mb-6">
+                <div className="mb-4 sm:mb-0">
+                    <label className="block text-lg font-medium mb-2">Début :</label>
+                    <input
+                        type="date"
+                        value={startDate}
+                        onChange={(e) => setStartDate(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
+                    />
+                </div>
+                <div className="mb-4 sm:mb-0">
+                    <label className="block text-lg font-medium mb-2">Fin :</label>
+                    <input
+                        type="date"
+                        value={endDate}
+                        onChange={(e) => setEndDate(e.target.value)}
+                        className="p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-400"
+                    />
+                </div>
+                <div className="flex-grow">
+                    <label htmlFor="entriesPerPage" className="text-lg font-medium">Entrées par page :</label>
+                    <select
+                        id="entriesPerPage"
+                        value={entriesPerPage}
+                        onChange={(e) => setEntriesPerPage(Number(e.target.value))}
+                        className="border border-gray-300 p-2 rounded-lg focus:ring-2 focus:ring-blue-400 ml-2"
+                    >
+                        {entriesPerPageOptions.map(option => (
+                            <option key={option} value={option}>
+                                {option}
+                            </option>
+                        ))}
+                    </select>
+                </div>
             </div>
 
             <div className="mb-6 flex items-center">
