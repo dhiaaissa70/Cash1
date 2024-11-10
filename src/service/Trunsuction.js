@@ -3,7 +3,7 @@ import axios from "axios";
 class TransferService {
     constructor(baseURL) {
         this.api = axios.create({
-            baseURL: baseURL || "https://backendtache1-production.up.railway.app/",
+            baseURL: baseURL || "https://catch-me.bet/",
         });
     }
 
