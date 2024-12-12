@@ -15,26 +15,36 @@ const RegisterForm = () => {
   const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"]; // User roles
 
   const handleRegister = async () => {
-    if (!user || !user.user || !user.user._id) {
+    if (!user || !user._id) {
       setMessage("User ID is not available. Please try again.");
       setIsModalOpen(true);
       return;
     }
-
+  
     try {
+      // Validate username
+      const usernameRegex = /^[a-zA-Z0-9._-]{4,16}$/;
+      if (!usernameRegex.test(profil.username)) {
+        setMessage(
+          "Username must be between 4 and 16 characters and can only contain letters, numbers, dots, underscores, and dashes."
+        );
+        setIsModalOpen(true);
+        return;
+      }
+  
       if (profil.role === "Select Role") {
         setMessage("Please select a role.");
         setIsModalOpen(true);
         return;
       }
-
+  
       const updatedProfil = {
         ...profil,
-        id: user.user._id
+        id: user._id,
       };
-
-      const response = await auth.registerUser(updatedProfil); 
-
+  
+      const response = await auth.registerUser(updatedProfil);
+  
       if (response.status === 201) {
         setMessage("User registered successfully!");
       } else {
@@ -47,6 +57,7 @@ const RegisterForm = () => {
       setIsModalOpen(true);
     }
   };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
