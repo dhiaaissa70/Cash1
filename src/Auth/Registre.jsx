@@ -12,16 +12,10 @@ const RegisterForm = () => {
   const auth = new Auth(); 
   const { user } = useAuth(); // Get the user object from the context
 
-  const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"]; // User roles
+  const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User","SuperPartner"]; // User roles
 
   const handleRegister = async () => {
-    // Check if the currently logged-in user is authorized to register another user
-    if (!user || !["SuperAdmin", "Admin", "Partner"].includes(user.role)) {
-      setMessage("You do not have permission to register a new user.");
-      setIsModalOpen(true);
-      return;
-    }
-  
+   
     try {
       // Validate username
       const usernameRegex = /^[a-zA-Z0-9._-]{4,16}$/;
