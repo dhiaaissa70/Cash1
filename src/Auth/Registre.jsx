@@ -15,8 +15,9 @@ const RegisterForm = () => {
   const roles = ["SuperAdmin", "Admin", "Partner", "Assistant", "User"]; // User roles
 
   const handleRegister = async () => {
-    if (!user || !user._id) {
-      setMessage("User ID is not available. Please try again.");
+    // Check if the currently logged-in user is authorized to register another user
+    if (!user || !["SuperAdmin", "Admin", "Partner"].includes(user.role)) {
+      setMessage("You do not have permission to register a new user.");
       setIsModalOpen(true);
       return;
     }
@@ -32,19 +33,23 @@ const RegisterForm = () => {
         return;
       }
   
+      // Validate role selection
       if (profil.role === "Select Role") {
         setMessage("Please select a role.");
         setIsModalOpen(true);
         return;
       }
   
+      // Prepare profile data
       const updatedProfil = {
         ...profil,
-        id: user._id,
+        createdBy: user._id, // Associate with the logged-in user
       };
   
+      // Call the registration API
       const response = await auth.registerUser(updatedProfil);
   
+      // Handle response
       if (response.status === 201) {
         setMessage("User registered successfully!");
       } else {
